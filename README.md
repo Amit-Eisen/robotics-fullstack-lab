@@ -48,3 +48,8 @@ python3 ros2_ws/src/tuning/src/optuna_tuner.py --config ros2_ws/src/tuning/confi
 - The current sim is PyBullet; I plan to migrate to **modern Gazebo (gz sim)** for richer sensors/worlds.
 - Results under `ros2_ws/src/tuning/results/` are generated artifacts and are ignored by git.
 
+## Status / Next steps
+- Migrate simulation to **gz sim** (start with a ready world + a known-good robot model).
+- Improve Pure Pursuit lookahead selection (segment-based / arc-length lookahead).
+- Add a minimal regression test for controller math + a short demo recording (GIF/video).
+
