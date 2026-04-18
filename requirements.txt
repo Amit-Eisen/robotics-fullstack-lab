@@ -1,0 +1,7 @@
+# For ros2_ws/src/tuning (headless tuning scripts)
+numpy
+pybullet
+PyYAML
+optuna
+opencv-python
+

@@ -1,0 +1,18 @@
+control_node:
+  ros__parameters:
+    # Pure Pursuit with velocity-dependent lookahead: ld = ld_min + k_ld * velocity
+    lookahead_min: 1.0
+    k_lookahead: 0.5
+    wheelbase: 0.3
+    goal_tolerance: 0.5
+    
+    # Velocity
+    max_velocity: 2.0
+    control_rate: 30.0
+    
+    # PID gains for velocity control
+    pid:
+      kp: 1.0
+      ki: 0.1
+      kd: 0.05
+      kff: 0.8

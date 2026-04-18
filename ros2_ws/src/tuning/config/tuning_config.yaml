@@ -1,0 +1,84 @@
+# Optuna Tuning Configuration
+
+study:
+  name: "control_tuning"
+  direction: "minimize"
+  n_trials: 100
+  n_jobs: 4
+  timeout: null  # seconds, null for no timeout
+
+# Parameter search space
+search_space:
+  # PID gains - conservative range for stable control
+  kp:
+    low: 0.5
+    high: 4.0
+    log: false
+  ki:
+    low: 0.0
+    high: 0.5
+    log: false
+  kd:
+    low: 0.0
+    high: 0.5
+    log: false
+  kff:
+    low: 0.3
+    high: 1.2
+    log: false
+  
+  # Pure Pursuit - reasonable lookahead for this scale
+  lookahead_min:
+    low: 1.5
+    high: 4.0
+    log: false
+  k_lookahead:
+    low: 0.2
+    high: 0.8
+    log: false
+
+# Fixed parameters (not tuned)
+fixed:
+  wheelbase: 0.3
+  target_velocity: 3.5  # Increased from 2.5 - testing limits
+  goal_tolerance: 1.0
+
+# Simulation settings
+simulation:
+  use_gui: false
+  use_obstacles: false  # Disabled for tuning - focus on path tracking
+  use_heightmap: false
+  max_episode_time: 100.0
+  dt: 0.004166667  # 1/240
+  control_dt: 0.033333333  # 1/30
+
+# Cost function weights
+cost_weights:
+  cross_track: 15.0       # Increased - prioritize path tracking
+  heading: 5.0            # Increased - stay aligned with path
+  control_effort: 1.0     # Increased - penalize excessive steering
+  control_smoothness: 5.0 # Increased significantly - penalize oscillations!
+  collision: 1000.0
+  timeout: 100.0           # Reduced - less penalty for slow completion
+  completion_bonus: -100.0 # Increased reward for completing
+
+# Test paths to use (from paths.py)
+# Each trial runs all paths and averages the cost
+test_paths:
+  - straight
+  - turn_left
+  - s_curve
+
+# Pruning settings (early stopping of bad trials)
+pruning:
+  enabled: true
+  n_startup_trials: 10
+  n_warmup_steps: 5
+  interval_steps: 1
+
+# Output settings
+output:
+  results_dir: "../results"
+  save_best_params: true
+  save_study: true
+  log_level: "INFO"
