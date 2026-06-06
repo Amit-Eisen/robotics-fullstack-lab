@@ -98,40 +98,37 @@ private:
         }
         
         if (!path.empty()) {
+            // Only reset PID if the path endpoint changed (new path identity)
+            bool is_new_path = (path.size() != last_path_size_) ||
+                               (std::abs(path.back().x - last_path_goal_x_) > 0.1) ||
+                               (std::abs(path.back().y - last_path_goal_y_) > 0.1);
+            
             pure_pursuit_->setPath(path);
-            pidVel->reset();
+            
+            if (is_new_path) {
+                pidVel->reset();
+                last_path_size_ = path.size();
+                last_path_goal_x_ = path.back().x;
+                last_path_goal_y_ = path.back().y;
+                RCLCPP_INFO(get_logger(), "New path with %zu waypoints, goal (%.2f, %.2f)",
+                            path.size(), path.back().x, path.back().y);
+            }
             has_path_ = true;
-            RCLCPP_INFO(get_logger(), "Received path with %zu waypoints", path.size());
         }
     }
     
     void goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-        // Simple straight-line path from current position to goal
-        std::vector<Waypoint> path;
-        
-        if (has_odom_) {
-            double goal_x = msg->pose.position.x;
-            double goal_y = msg->pose.position.y;
-            
-            // Create simple path with intermediate points
-            int num_points = 20;
-            for (int i = 0; i <= num_points; ++i) {
-                double t = static_cast<double>(i) / num_points;
-                path.push_back({
-                    current_pose_.x + t * (goal_x - current_pose_.x),
-                    current_pose_.y + t * (goal_y - current_pose_.y)
-                });
-            }
-            
-            pure_pursuit_->setPath(path);
-            pidVel->reset();
-            has_path_ = true;
-            RCLCPP_INFO(get_logger(), "Goal received: (%.2f, %.2f)", goal_x, goal_y);
-        }
+        // This callback is kept for logging/debugging only.
+        RCLCPP_INFO(get_logger(), "Goal received (%.2f, %.2f) - waiting for planner to publish /path",
+                    msg->pose.position.x, msg->pose.position.y);
     }
     
     void control_loop() {
         if (!has_odom_ || !has_path_) {
+            geometry_msgs::msg::Twist zero;
+            zero.linear.x = 0.0;
+            zero.angular.z = 0.0;
+            cmd_vel_pub_->publish(zero);
             return;
         }
         
@@ -150,7 +147,6 @@ private:
             cmd.linear.x = 0.0;
             cmd.angular.z = 0.0;
             cmd_vel_pub_->publish(cmd);
-            
             if (has_path_) {
                 RCLCPP_INFO(get_logger(), "Goal reached!");
                 has_path_ = false;
@@ -206,6 +202,11 @@ private:
     double currentVel{0.0};
     bool has_odom_{false};
     bool has_path_{false};
+    
+    // Path identity tracking (for PID reset guard)
+    size_t last_path_size_{0};
+    double last_path_goal_x_{0.0};
+    double last_path_goal_y_{0.0};
     
     // Parameters
     double max_velocity_;
